@@ -1,6 +1,15 @@
 # Ring Videos to AWS S3
 Python script to download Ring videos and copy them to S3
 
+Install pre-requisites
+<pre>
+sudo pip install --upgrade awscli
+sudo pip install boto3
+pip install ring_doorbell
+</pre>
+
+Run the script
+
 <pre>
 Johns-MacBook-Pro:ring-videos admin$ python ring.py 
 2019-08-26-21-04-34.mp4
