@@ -26,5 +26,5 @@ Johns-MacBook-Pro:ring-videos admin$ python ring.py
 2019/08/26/2019-08-26-18-27-47.mp4
 </pre>
 
-![Alt text](./images/images-001.jpg?raw=true "Step 01")
+![Alt text](./images/images-003.jpg?raw=true "Step 01")
 ![Alt text](./images/images-002.jpg?raw=true "Step 02")
