@@ -26,7 +26,7 @@ if myring.is_connected:
     for history in video_history:
         url = camera.recording_url(history['id'])
         print(history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4")
-        if history['created_at'].astimezone(est).strftime("%d") == '26':
+        if history['created_at'].astimezone(est).strftime("%d") == '24':
             filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
             filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
@@ -39,3 +39,5 @@ if myring.is_connected:
                 response = s3_client.upload_file(filename, "ring-camera-videos", path)
             except ClientError as e:
                 logging.error(e)
+
+            os.remove(filename)
