@@ -26,9 +26,10 @@ if myring.is_connected:
     camera = myring.stickup_cams[0]
     video_history = camera.history(limit = 200)
     for history in video_history:
-        url = camera.recording_url(history['id'])
 
         if history['created_at'].astimezone(est).date() == yesterday:
+            url = camera.recording_url(history['id'])
+
             filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
             filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
