@@ -7,18 +7,6 @@ from datetime import datetime, timedelta, date
 import pytz
 import configparser
 
-config = configparser.ConfigParser()
-config.read('dropbox.ini')
-
-token = config['DEFAULT']['token']
-
-config.read('ring-api.ini')
-
-username = config['DEFAULT']['username']
-password = config['DEFAULT']['password']
-
-myring = Ring(username, password)
-
 class DropboxUploader:
 	dbx = None
 	root_directory = None
@@ -27,7 +15,7 @@ class DropboxUploader:
 		self.dbx = dropbox.Dropbox(token)
 		self.root_directory = root_dir
 
-	def dropbox_file_exists(self, filepath):
+	def file_exists(self, filepath):
 		try:
 			filepath = os.path.join(self.root_directory, filepath)
 			self.dbx.files_get_metadata(filepath)
@@ -58,33 +46,60 @@ class DropboxUploader:
 						self.dbx.files_upload_session_append(f.read(CHUNK_SIZE), cursor.session_id, cursor.offset)
 
 						cursor.offset = f.tell()
-
 		f.close()
 
-def download_ring_videos(camera, datetodownload, timezone, dropboxuploader):
-	video_history = camera.history(limit = 200)
 
-	for history in video_history:
-		url = camera.recording_url(history['id'])
+class RingVideo:
+	url = None
+	filepath = None
+	filename = None
 
-		if history['kind'] == 'motion' and history['created_at'].astimezone(timezone).date() == datetodownload:
-			filepath = history['created_at'].astimezone(timezone).strftime("%Y/%m/%d")
-			filename = history['created_at'].astimezone(timezone).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
+	def __init__(self, url, filepath, filename):
+		self.url = url
+		self.filepath = filepath
+		self.filename = filename
 
-			path = os.path.join(filepath, filename)
-			download_video_and_upload(url, filename, path, dropboxuploader)
+class RingCamera:
+	ring = None
+	camera = None
+	history_limit = 200
+	videos = []
 
-def download_video_and_upload(url, filename, destination, dropboxuploader):
-	if dropboxuploader.dropbox_file_exists(destination) == False:
-		urllib.request.urlretrieve(url, filename)
-		dropboxuploader.uploadfile(filename, destination)
-		os.remove(filename)
+	def __init__(self, username, password, history_limit):
+		self.ring = Ring(username, password)
+		self.history_limit = history_limit
+		if self.ring.is_connected:
+			self.camera = self.ring.stickup_cams[0]
 
-yesterday = date.today() - timedelta(days=1)
-est = pytz.timezone('US/Eastern')
+	def get_motion_videos_by_date(self, datetodownload, timezone):
+		video_history = self.camera.history(limit = self.history_limit)
+		for history in video_history:
+			if history['kind'] == 'motion' and history['created_at'].astimezone(timezone).date() == datetodownload:
+				filepath = history['created_at'].astimezone(timezone).strftime("%Y/%m/%d")
+				filename = history['created_at'].astimezone(timezone).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
-if myring.is_connected:
-	camera = myring.stickup_cams[0]
-	dropboxuploader = DropboxUploader(token, "/Ring-Videos/")
+				path = os.path.join(filepath, filename)
 
-	download_ring_videos(camera, yesterday, est, dropboxuploader)
+				self.videos.append(RingVideo(self.camera.recording_url(history['id']), path, filename))
+
+		return self.videos
+
+def main():
+	config = configparser.ConfigParser()
+	config.read('dropbox.ini')
+	dropboxuploader = DropboxUploader(config['DEFAULT']['token'], "/Ring-Videos/")
+
+	config.read('ring-api.ini')
+	myring = RingCamera(config['DEFAULT']['username'], config['DEFAULT']['password'], 50)
+
+	yesterday = date.today() - timedelta(days=1)
+	est = pytz.timezone('US/Eastern')
+
+	for video in myring.get_motion_videos_by_date(yesterday, est):
+		if dropboxuploader.file_exists(video.filepath) == False:
+			urllib.request.urlretrieve(video.url, video.filename)
+			dropboxuploader.uploadfile(video.filename, video.filepath)
+			os.remove(video.filename)
+			print(video.filepath)
+
+main()
