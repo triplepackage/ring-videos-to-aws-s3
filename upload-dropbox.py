@@ -70,7 +70,7 @@ if myring.is_connected:
 
 			path = os.path.join(filepath, filename)
 
-			if(dropbox_file_exists("/Ring-Videos/" + path)):
+			if dropbox_file_exists("/Ring-Videos/" + path) == False:
 				   uploadfile(filename, "/Ring-Videos/" + path)
 
 			os.remove(filename)
