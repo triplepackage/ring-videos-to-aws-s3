@@ -1,6 +1,6 @@
 from ring_doorbell import Ring
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta, date
 import pytz
 import configparser
 import logging
@@ -20,20 +20,21 @@ myring = Ring(username, password)
 
 s3_client = boto3.client('s3')
 
+yesterday = date.today() - timedelta(days=1)
+
 if myring.is_connected:
     camera = myring.stickup_cams[0]
     video_history = camera.history(limit = 200)
     for history in video_history:
         url = camera.recording_url(history['id'])
-        print(history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4")
-        if history['created_at'].astimezone(est).strftime("%d") == '24':
+
+        if history['created_at'].astimezone(est).date() == yesterday:
             filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
             filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
             urllib.request.urlretrieve(url, filename)
 
             path = os.path.join(filepath, filename)
-            print(path)
 
             try:
                 response = s3_client.upload_file(filename, "ring-camera-videos", path)
