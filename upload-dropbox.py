@@ -26,7 +26,7 @@ yesterday = date.today() - timedelta(days=1)
 
 def dropbox_file_exists(filepath):
 	try:
-		print(dbx.files_get_metadata(filepath).path)
+		dbx.files_get_metadata(filepath)
 		return True
 	except:
 		return False
@@ -66,11 +66,9 @@ if myring.is_connected:
 			filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
 			filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
-			urllib.request.urlretrieve(url, filename)
-
 			path = os.path.join(filepath, filename)
 
 			if dropbox_file_exists("/Ring-Videos/" + path) == False:
-				   uploadfile(filename, "/Ring-Videos/" + path)
-
-			os.remove(filename)
+				urllib.request.urlretrieve(url, filename)
+				uploadfile(filename, "/Ring-Videos/" + path)
+				os.remove(filename)
