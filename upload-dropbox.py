@@ -24,6 +24,13 @@ myring = Ring(username, password)
 
 yesterday = date.today() - timedelta(days=1)
 
+def dropbox_file_exists(filepath):
+	try:
+		print(dbx.files_get_metadata(filepath).path)
+		return True
+	except:
+		return False
+
 def uploadfile(filepath, filedestination):
 	f = open(filepath)
 	file_size = os.path.getsize(filepath)
@@ -31,7 +38,7 @@ def uploadfile(filepath, filedestination):
 	CHUNK_SIZE = 4 * 1024 * 1024
 
 	if file_size <= CHUNK_SIZE:
-	    print (dbx.files_upload(f.read(), filedestination))
+		print (dbx.files_upload(f.read(), filedestination))
 	else:
 		with open(filepath, 'rb') as f:
 			contents = f.read(CHUNK_SIZE)
@@ -50,19 +57,20 @@ def uploadfile(filepath, filedestination):
 		f.close()
 
 if myring.is_connected:
-    camera = myring.stickup_cams[0]
-    video_history = camera.history(limit = 200)
-    for history in video_history:
-        url = camera.recording_url(history['id'])
+	camera = myring.stickup_cams[0]
+	video_history = camera.history(limit = 200)
+	for history in video_history:
+		url = camera.recording_url(history['id'])
 
-        if history['created_at'].astimezone(est).date() == yesterday:
-	        filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
-	        filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
+		if history['created_at'].astimezone(est).date() == yesterday:
+			filepath = history['created_at'].astimezone(est).strftime("%Y/%m/%d")
+			filename = history['created_at'].astimezone(est).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
-	        urllib.request.urlretrieve(url, filename)
+			urllib.request.urlretrieve(url, filename)
 
-	        path = os.path.join(filepath, filename)
+			path = os.path.join(filepath, filename)
 
-	        uploadfile(filename, "/Ring-Videos/" + path)
+			if(dropbox_file_exists("/Ring-Videos/" + path)):
+				   uploadfile(filename, "/Ring-Videos/" + path)
 
-	        os.remove(filename)
+			os.remove(filename)
