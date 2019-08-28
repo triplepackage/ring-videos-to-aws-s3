@@ -90,7 +90,7 @@ def main():
 	dropboxuploader = DropboxUploader(config['DEFAULT']['token'], "/Ring-Videos/")
 
 	config.read('ring-api.ini')
-	myring = RingCamera(config['DEFAULT']['username'], config['DEFAULT']['password'], 50)
+	myring = RingCamera(config['DEFAULT']['username'], config['DEFAULT']['password'], 200)
 
 	yesterday = date.today() - timedelta(days=1)
 	est = pytz.timezone('US/Eastern')
