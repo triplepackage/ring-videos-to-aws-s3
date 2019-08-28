@@ -63,6 +63,6 @@ if myring.is_connected:
 
 	        path = os.path.join(filepath, filename)
 
-	        uploadfile(filename, "/" + path)
+	        uploadfile(filename, "/Ring-Videos/" + path)
 
 	        os.remove(filename)
