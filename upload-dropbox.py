@@ -16,7 +16,7 @@ class BotoUploader:
     def __init__(self, bucket_name):
         self.bucket_name = bucket_name
 
-    def uploadfile(self, path, filename):
+    def upload_file(self, path, filename):
         try:
             self.s3_client.upload_file(filename, self.bucket_name, path)
         except ClientError as e:
@@ -39,7 +39,7 @@ class DropboxUploader:
         except:
             return False
 
-    def uploadfile(self, filepath, file_destination):
+    def upload_file(self, filepath, file_destination):
         f = open(filepath)
         file_size = os.path.getsize(filepath)
         file_destination = os.path.join(self.root_directory, file_destination)
@@ -47,7 +47,7 @@ class DropboxUploader:
         CHUNK_SIZE = 4 * 1024 * 1024
 
         if file_size <= CHUNK_SIZE:
-            print (self.dbx.files_upload(f.read(), file_destination))
+            print(self.dbx.files_upload(f.read(), file_destination))
         else:
             with open(filepath, 'rb') as f:
                 contents = f.read(CHUNK_SIZE)
@@ -57,8 +57,8 @@ class DropboxUploader:
                 commit = dropbox.files.CommitInfo(path=file_destination)
 
                 while f.tell() < file_size:
-                    if ((file_size - f.tell()) <= CHUNK_SIZE):
-                        print (self.dbx.files_upload_session_finish(f.read(CHUNK_SIZE), cursor, commit))
+                    if (file_size - f.tell()) <= CHUNK_SIZE:
+                        print(self.dbx.files_upload_session_finish(f.read(CHUNK_SIZE), cursor, commit))
                     else:
                         self.dbx.files_upload_session_append(f.read(CHUNK_SIZE), cursor.session_id, cursor.offset)
 
@@ -89,10 +89,10 @@ class RingCamera:
         if self.ring.is_connected:
             self.camera = self.ring.stickup_cams[0]
 
-    def get_motion_videos_by_date(self, datetodownload, timezone):
+    def get_motion_videos_by_date(self, date_to_download, timezone):
         video_history = self.camera.history(limit=self.history_limit)
         for history in video_history:
-            if history['kind'] == 'motion' and history['created_at'].astimezone(timezone).date() == datetodownload:
+            if history['kind'] == 'motion' and history['created_at'].astimezone(timezone).date() == date_to_download:
                 filepath = history['created_at'].astimezone(timezone).strftime("%Y/%m/%d")
                 filename = history['created_at'].astimezone(timezone).strftime("%Y-%m-%d-%H-%M-%S") + ".mp4"
 
@@ -105,25 +105,24 @@ class RingCamera:
 
 def main():
     config = configparser.ConfigParser()
-    config.read('dropbox.ini')
-    dropboxuploader = DropboxUploader(config['DEFAULT']['token'], "/Ring-Videos/")
+    config.read('config.ini')
+    dropbox_uploader = DropboxUploader(config['Dropbox']['token'], config['Dropbox']['root_folder'])
 
-    config.read('ring-api.ini')
-    myring = RingCamera(config['DEFAULT']['username'], config['DEFAULT']['password'], 200)
+    ring_camera = RingCamera(config['Ring']['username'], config['Ring']['password'], 200)
 
-    botouploader = BotoUploader("ring-camera-videos")
+    boto_uploader = BotoUploader("ring-camera-videos")
 
     yesterday = date.today() - timedelta(days=1)
-    est = pytz.timezone('US/Eastern')
+    est = pytz.timezone(config['Ring']['timezone'])
 
-    videos = myring.get_motion_videos_by_date(yesterday, est)
+    videos = ring_camera.get_motion_videos_by_date(yesterday, est)
 
     for video in videos:
         urllib.request.urlretrieve(video.url, video.filename)
-        botouploader.uploadfile(video.filepath, video.filename)
+        boto_uploader.upload_file(video.filepath, video.filename)
 
-        if not dropboxuploader.file_exists(video.filepath):
-            dropboxuploader.uploadfile(video.filename, video.filepath)
+        if not dropbox_uploader.file_exists(video.filepath):
+            dropbox_uploader.upload_file(video.filename, video.filepath)
 
         os.remove(video.filename)
         print(video.filepath)
