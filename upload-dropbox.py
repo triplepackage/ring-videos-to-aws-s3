@@ -6,6 +6,22 @@ import urllib.request
 from datetime import datetime, timedelta, date
 import pytz
 import configparser
+import boto3
+from botocore.exceptions import ClientError
+
+class BotoUploader:
+	s3_client = boto3.client('s3')
+	bucket_name = None
+
+	def __init__(self, bucket_name):
+		self.bucket_name = bucket_name
+
+	def uploadfile(self, path, filename):
+		try:
+			self.s3_client.upload_file(filename, self.bucket_name, path)
+		except ClientError as e:
+			print(e)
+
 
 class DropboxUploader:
 	dbx = None
@@ -92,14 +108,21 @@ def main():
 	config.read('ring-api.ini')
 	myring = RingCamera(config['DEFAULT']['username'], config['DEFAULT']['password'], 200)
 
+	botouploader = BotoUploader("ring-camera-videos")
+
 	yesterday = date.today() - timedelta(days=1)
 	est = pytz.timezone('US/Eastern')
 
-	for video in myring.get_motion_videos_by_date(yesterday, est):
+	videos = myring.get_motion_videos_by_date(yesterday, est)
+
+	for video in videos:
+		urllib.request.urlretrieve(video.url, video.filename)
+		botouploader.uploadfile(video.filepath, video.filename)
+
 		if dropboxuploader.file_exists(video.filepath) == False:
-			urllib.request.urlretrieve(video.url, video.filename)
 			dropboxuploader.uploadfile(video.filename, video.filepath)
-			os.remove(video.filename)
-			print(video.filepath)
+
+		os.remove(video.filename)
+		print(video.filepath)
 
 main()
