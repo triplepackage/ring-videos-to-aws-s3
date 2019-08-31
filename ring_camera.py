@@ -33,15 +33,15 @@ class RingCamera:
     def get_motion_videos_by_date(self, date_to_download, timezone):
         for camera in self.cameras:
             video_history = camera.history(limit=self.history_limit)
+            video_history = [x for x in video_history if (x['created_at'].astimezone(timezone).date() ==
+                                                          date_to_download and x['kind'] == 'motion')]
             for history in video_history:
-                if history['kind'] == 'motion' and history['created_at'].astimezone(
-                        timezone).date() == date_to_download:
-                    directory = history['created_at'].astimezone(timezone).strftime("%Y/%m/%d")
-                    filename = camera.name + \
-                               history['created_at'].astimezone(timezone).strftime("-%Y-%m-%d-%H-%M-%S") + ".mp4"
+                directory = history['created_at'].astimezone(timezone).strftime("%Y/%m/%d")
+                filename = camera.name + \
+                    history['created_at'].astimezone(timezone).strftime("-%Y-%m-%d-%H-%M-%S") + ".mp4"
 
-                    path = os.path.join(directory, filename)
+                path = os.path.join(directory, filename)
 
-                    self.videos.append(RingVideo(camera.recording_url(history['id']), path, filename))
+                self.videos.append(RingVideo(camera.recording_url(history['id']), path, filename))
 
         return self.videos
