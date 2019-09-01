@@ -25,7 +25,7 @@ def process_videos():
 
     boto_uploader = BotoUploader("ring-camera-videos")
 
-    yesterday = date.today() - timedelta(days=0)
+    yesterday = date.today() - timedelta(days=1)
     est = pytz.timezone(config['Ring']['timezone'])
 
     print("Retrieving videos for " + yesterday.strftime("%m/%d/%Y") + "...")
