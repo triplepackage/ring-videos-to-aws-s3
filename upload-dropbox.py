@@ -17,7 +17,7 @@ def floored_percentage(val, digits):
 
 
 def process_videos():
-    config = configparser.ConfigParser()
+    config = configparser.RawConfigParser()
     config.read('config.ini')
     dropbox_uploader = DropboxUploader(config['Dropbox']['token'], config['Dropbox']['root_folder'])
 
