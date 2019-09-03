@@ -33,10 +33,16 @@ def process_videos():
 
     for video in videos:
         urllib.request.urlretrieve(video.url, video.filename)
-        boto_uploader.upload_file(video.filepath, video.filename)
+        try:
+            boto_uploader.upload_file(video.filepath, video.filename)
+        except:
+            print("Unable to upload " + video.filename + " to AWS S3")
 
         if not dropbox_uploader.file_exists(video.filepath):
-            dropbox_uploader.upload_file(video.filename, video.filepath)
+            try:
+                dropbox_uploader.upload_file(video.filename, video.filepath)
+            except:
+                print("Unable to upload " + video.filename + " to Dropbox")
 
         os.remove(video.filename)
         progress = videos.index(video) / len(videos)
