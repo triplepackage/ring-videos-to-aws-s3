@@ -37,7 +37,7 @@ class DropboxUploader:
 
                 while f.tell() < file_size:
                     if (file_size - f.tell()) <= CHUNK_SIZE:
-                        print(self.dbx.files_upload_session_finish(f.read(CHUNK_SIZE), cursor, commit))
+                        self.dbx.files_upload_session_finish(f.read(CHUNK_SIZE), cursor, commit)
                     else:
                         self.dbx.files_upload_session_append(f.read(CHUNK_SIZE), cursor.session_id, cursor.offset)
 

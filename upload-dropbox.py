@@ -18,7 +18,8 @@ def floored_percentage(val, digits):
 
 def process_videos():
     config = configparser.RawConfigParser()
-    config.read('config.ini')
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    config.read(os.path.join(base_path, 'config.ini'))
     dropbox_uploader = DropboxUploader(config['Dropbox']['token'], config['Dropbox']['root_folder'])
 
     ring_camera = RingCamera(config['Ring']['username'], config['Ring']['password'], 200)
